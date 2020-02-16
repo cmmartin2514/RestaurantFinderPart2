@@ -67,6 +67,9 @@ TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 // space with too many variables.
 int selectedRest;
 
+// overall restaurant index in sorted list
+int overallIndex;
+
 // which mode are we in?
 enum DisplayMode { MAP, MENU } displayMode;
 
@@ -179,13 +182,13 @@ void printRestaurant(int i) {
 	getRestaurant(&r, restaurants[i].index, &card, &cache);
 
 	// Set its colour based on whether or not it is the selected restaurant.
-	if (i != selectedRest) {
+	if ((i % REST_DISP_NUM) != selectedRest) {
 		tft.setTextColor(TFT_WHITE, TFT_BLACK);
 	}
 	else {
 		tft.setTextColor(TFT_BLACK, TFT_WHITE);
 	}
-	tft.setCursor(0, i*15);
+	tft.setCursor(0, (i%REST_DISP_NUM)*15);
 	tft.print(r.name);
 }
 
@@ -201,6 +204,9 @@ void beginMode1() {
 
 	// Initially have the closest restaurant highlighted.
 	selectedRest = 0;
+
+	// initially overall restaurant index should be the same as selectedRest
+	overallIndex = 0;
 
 	// Print the list of restaurants.
 	for (int i = 0; i < REST_DISP_NUM; ++i) {
@@ -329,30 +335,61 @@ void scrollingMap() {
 // Process joystick movement when in mode 1.
 void scrollingMenu() {
 	int oldRest = selectedRest;
+	int overallIndexPrev = overallIndex;
 
 	int v = analogRead(JOY_VERT_ANALOG);
 
 	// if the joystick was pushed up or down, change restaurants accordingly.
 	if (v > JOY_CENTRE + JOY_DEADZONE) {
+		// increment overall index along with selectedRest so they always point to the same restaurant
 		++selectedRest;
+		++overallIndex;
 	}
 	else if (v < JOY_CENTRE - JOY_DEADZONE) {
+		// decrement overall index along with selectedRest so they always point to the same restaurant
 		--selectedRest;
+		--overallIndex;
 	}
-	selectedRest = constrain(selectedRest, 0, REST_DISP_NUM -1);
 
-	// If we picked a new restaurant, update the way it and the previously
-	// selected restaurant are displayed.
-	if (oldRest != selectedRest) {
-		printRestaurant(oldRest);
-		printRestaurant(selectedRest);
-		delay(50); // so we don't scroll too fast
+	// if the selected restaurant has exceeded number of displayed restaurants on screen
+	if (selectedRest > REST_DISP_NUM - 1 && overallIndex < 1066) {
+		// reset the screen
+		tft.fillScreen(TFT_BLACK);
+		// reset the selected rest to 0
+		selectedRest = 0;
+		// draw the next 21 restaurants on a new page
+		for (int i = 0; i < REST_DISP_NUM; ++i) {
+			printRestaurant(i + overallIndex);
+		}
+	} else if (selectedRest < 0 && overallIndex >= 0) {
+		// reset the screen
+		tft.fillScreen(TFT_BLACK);
+		// reset the selected rest to 21
+		selectedRest = 20;
+		// draw previous 21 restaurants on new page
+		for (int i = 0; i < REST_DISP_NUM; ++i) {
+			printRestaurant(overallIndex - i);
+		}
+	} else {
+		// constrain the overallIndex variable to number of restaurants
+		overallIndex = constrain(overallIndex, 0, NUM_RESTAURANTS);
+
+		// constrain the selected restaurant varaible to number of displayable restaurants
+		selectedRest = constrain(selectedRest, 0, REST_DISP_NUM);
+
+		// If we picked a new restaurant, update the way it and the previously
+		// selected restaurant are displayed.
+		if (oldRest != selectedRest) {
+			printRestaurant(overallIndexPrev);
+			printRestaurant(overallIndex);
+			delay(50); // so we don't scroll too fast
+		}		
 	}
 
 	// If we clicked on a restaurant.
 	if (digitalRead(JOY_SEL) == LOW) {
 		restaurant r;
-		getRestaurant(&r, restaurants[selectedRest].index, &card, &cache);
+		getRestaurant(&r, restaurants[overallIndex].index, &card, &cache);
 		// Calculate the new map view.
 
 		// Center the map view at the restaurant, constraining against the edge of
