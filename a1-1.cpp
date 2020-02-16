@@ -70,6 +70,10 @@ int selectedRest;
 // overall restaurant index in sorted list
 int overallIndex;
 
+// rating and sort selector variables
+int rating = 3;
+int sortMode = 2;
+
 // which mode are we in?
 enum DisplayMode { MAP, MENU } displayMode;
 
@@ -91,6 +95,7 @@ RestCache cache;
 // it seems natural to forward declare both (not really that important).
 void beginMode0();
 void beginMode1();
+void buttons();
 
 void setup() {
 	init();
@@ -166,6 +171,8 @@ void beginMode0() {
 								 curView.mapX, curView.mapY,
 								 0, 0,
 								 DISP_WIDTH, DISP_HEIGHT);
+
+  buttons();
 
 	// just the initial draw of the cursor on the map
 	moveCursor();
@@ -317,18 +324,40 @@ void scrollingMap() {
 
 	// If there was an actual touch, draw the dots
 	if (touch.z >= MINPRESSURE && touch.z <= MAXPRESSURE) {
-		restaurant r;
+		// if the screen has been touched
+	    // map touch points to screen size
+	    int ptx = map(touch.y, TS_MINX, TS_MAXX, 0, TFT_WIDTH);
+        int pty = map(touch.x, TS_MINY, TS_MAXY, 0, TFT_HEIGHT);
+        if (ptx > RATING_SIZE) {
+        	// touch was in map range
+        	restaurant r;
+			// just iterate through all restaurants on the card
+			for (int i = 0; i < NUM_RESTAURANTS; ++i) {
+				getRestaurant(&r, i, &card, &cache);
+				int16_t rest_x_tft = lon_to_x(r.lon)-curView.mapX, rest_y_tft = lat_to_y(r.lat)-curView.mapY;
 
-		// just iterate through all restaurants on the card
-		for (int i = 0; i < NUM_RESTAURANTS; ++i) {
-			getRestaurant(&r, i, &card, &cache);
-			int16_t rest_x_tft = lon_to_x(r.lon)-curView.mapX, rest_y_tft = lat_to_y(r.lat)-curView.mapY;
-
-			// only draw if entire radius-3 circle will be in the map display
-			if (rest_x_tft >= 3 && rest_x_tft < DISP_WIDTH-3 &&  rest_y_tft >= 3 && rest_y_tft < DISP_HEIGHT-3) {
-				tft.fillCircle(rest_x_tft, rest_y_tft, 3, TFT_BLUE);
+				// only draw if entire radius-3 circle will be in the map display
+				if (rest_x_tft >= 3 && rest_x_tft < DISP_WIDTH-3 &&  rest_y_tft >= 3 && rest_y_tft < DISP_HEIGHT-3) {
+					tft.fillCircle(rest_x_tft, rest_y_tft, 3, TFT_BLUE);
+				}
 			}
-		}
+        } else if (ptx < RATING_SIZE && pty > (DISP_HEIGHT/2)) {
+        	// touch was on buttons
+        	rating++;
+        	rating = rating % 6;
+        	if (rating == 0) {
+        		// account for 6 % 6 = 0
+        		rating = 1;
+        	}
+        	buttons();
+        	delay(200);
+        } else if (ptx < RATING_SIZE && pty < (DISP_HEIGHT/2)) {
+        	sortMode ++;
+        	sortMode = sortMode % 3;
+        	buttons();
+        	delay(200);
+        }
+		
 	}
 }
 
@@ -407,6 +436,48 @@ void scrollingMenu() {
 
 		// Ensures a long click of the joystick will not register twice.
 		while (digitalRead(JOY_SEL) == LOW) { delay(10); }
+	}
+}
+
+
+void buttons() {
+	// draw top button
+	tft.drawRect(DISP_WIDTH, 0, RATING_SIZE, DISP_HEIGHT/2, TFT_WHITE);
+	// draw bottom button
+	tft.drawRect(DISP_WIDTH, DISP_HEIGHT/2, RATING_SIZE, DISP_HEIGHT/2, TFT_WHITE);
+
+	// label top button according to rating
+	if (rating == 1) {
+		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2)-5, DISP_HEIGHT/4 - 8, '1', TFT_WHITE, TFT_BLACK, 2);
+	} else if (rating == 2) {
+		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2)-5, DISP_HEIGHT/4 - 8, '2', TFT_WHITE, TFT_BLACK, 2);
+	} else if (rating == 3) {
+		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2)-5, DISP_HEIGHT/4 - 8, '3', TFT_WHITE, TFT_BLACK, 2);
+	} else if (rating == 4) {
+		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2)-5, DISP_HEIGHT/4 - 8, '4', TFT_WHITE, TFT_BLACK, 2);
+	} else {
+		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2)-5, DISP_HEIGHT/4 - 8, '5', TFT_WHITE, TFT_BLACK, 2);
+	}
+
+	// label bottom button according to sort mode
+	if (sortMode == 0) {
+		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2) - 5, 3*(DISP_HEIGHT/4) - 40, 'I', TFT_WHITE, TFT_BLACK, 2);
+		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2) - 5, 3*(DISP_HEIGHT/4) - 24, 'S', TFT_WHITE, TFT_BLACK, 2);
+		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2) - 5, 3*(DISP_HEIGHT/4) - 8, 'O', TFT_WHITE, TFT_BLACK, 2);
+		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2) - 5, 3*(DISP_HEIGHT/4) + 8, 'R', TFT_WHITE, TFT_BLACK, 2);
+		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2) - 5, 3*(DISP_HEIGHT/4) + 24, 'T', TFT_WHITE, TFT_BLACK, 2);
+	} else if (sortMode == 1) {
+		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2) - 5, 3*(DISP_HEIGHT/4) - 40, 'Q', TFT_WHITE, TFT_BLACK, 2);
+		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2) - 5, 3*(DISP_HEIGHT/4) - 24, 'S', TFT_WHITE, TFT_BLACK, 2);
+		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2) - 5, 3*(DISP_HEIGHT/4) - 8, 'O', TFT_WHITE, TFT_BLACK, 2);
+		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2) - 5, 3*(DISP_HEIGHT/4) + 8, 'R', TFT_WHITE, TFT_BLACK, 2);
+		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2) - 5, 3*(DISP_HEIGHT/4) + 24, 'T', TFT_WHITE, TFT_BLACK, 2);
+	} else {
+		tft.fillRect(DISP_WIDTH + (RATING_SIZE/2) - 5, 3*(DISP_HEIGHT/4) - 40, 10, 80, TFT_BLACK);
+		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2) - 5, 3*(DISP_HEIGHT/4) - 32, 'B', TFT_WHITE, TFT_BLACK, 2);
+		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2) - 5, 3*(DISP_HEIGHT/4) - 16, 'O', TFT_WHITE, TFT_BLACK, 2);
+		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2) - 5, 3*(DISP_HEIGHT/4), 'T', TFT_WHITE, TFT_BLACK, 2);
+		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2) - 5, 3*(DISP_HEIGHT/4) + 16, 'H', TFT_WHITE, TFT_BLACK, 2);
 	}
 }
 
