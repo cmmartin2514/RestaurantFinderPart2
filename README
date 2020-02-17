@@ -1,0 +1,35 @@
+CMPUT 275 Major Assignment #1 Part #2
+Names: Celine Fong (1580124)
+	   Claire Martin ()
+Winter 2020
+
+Included Files:
+	*Makefile
+	*a1part2
+	*README
+	*lcd_image.cpp
+	*lcd_image.h
+	*restaurant.cpp
+	*restaurant.h
+	*yegmap.cpp
+	*yegmap.h
+
+Equipment:
+	*Arduino MEGA
+	*TFT display
+	*Joystick
+
+Description:
+Using a TFT display, the program displays a map of Edmonton that displays the locations of restaurants. The map can be scrolled through using a joystick, and by pressing the joystick a list of nearby restaurants will be displayed and can be selected using the joystick. Two buttons used to control the sort type and the minimum desired rating will be displayed next to the map and controlled using the touchscreen.
+
+Wiring Instructions:
+	Follow wiring instructions as directed on eClass.
+
+Running the program:
+	1. Navigate to directory containing included files
+	2. Connect Arduino by USB
+	3. Type "make upload" into command line
+	4. Use joystick and touchscreen controls
+
+Notes and Assumptions:
+	Many functions were taken from the a1part1 solution provided on eClass, this has been indicated directly in the comments of a1part2.cpp, restaurant.h, and restaurant.cpp.

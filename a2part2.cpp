@@ -1,3 +1,10 @@
+//------------------------------
+// Name: Celine Fong (1580124)
+//		 Claire Martin ()
+// CMPUT 275, Winter 2020
+// Major Assignment #1, Part #2
+//------------------------------
+	
 #include <Arduino.h>
 #include <MCUFRIEND_kbv.h>
 #include <SPI.h>
@@ -74,6 +81,7 @@ int overallIndex;
 int rating = 1;
 int sortMode = 0;
 
+// sets number of restaurants to pull from list
 int relevantRestaurants = NUM_RESTAURANTS;
 
 // which mode are we in?
@@ -86,6 +94,7 @@ MapView curView, preView;
 // information for the most recent click in sorted order.
 RestDist restaurants[NUM_RESTAURANTS];
 
+// edmonton map
 lcd_image_t edmontonBig = { "yeg-big.lcd", MAPWIDTH, MAPHEIGHT };
 
 // The cache of 8 restaurants for the getRestaurant function.
@@ -114,43 +123,51 @@ void setup() {
 	tft.setTextWrap(false);
 
 	// now initialize the SD card in both modes
-  Serial.print("Initializing SD card...");
+    Serial.print("Initializing SD card...");
 
 	// Initialize for reading through the FAT filesystem
 	// (required for lcd_image drawing function).
-  if (!SD.begin(SD_CS)) {
-    Serial.println("failed!");
-    Serial.println("Is the card inserted properly?");
-    while (true) {}
-  }
+    if (!SD.begin(SD_CS)) {
+    	Serial.println("failed!");
+    	Serial.println("Is the card inserted properly?");
+    	while (true) {}
+    }
 
 	// Also initialize the SD card for raw reads.
-  Serial.print("Initializing SPI communication for raw reads...");
-  if (!card.init(SPI_HALF_SPEED, SD_CS)) {
-    Serial.println("failed!");
-    while (true) {}
-  }
+    Serial.print("Initializing SPI communication for raw reads...");
+    if (!card.init(SPI_HALF_SPEED, SD_CS)) {
+    	Serial.println("failed!");
+    	while (true) {}
+    }
 
-  Serial.println("OK!");
+    Serial.println("OK!");
 
-  // initial cursor position is the centre of the screen
-  curView.cursorX = DISP_WIDTH/2;
-  curView.cursorY = DISP_HEIGHT/2;
+    // initial cursor position is the centre of the screen
+    curView.cursorX = DISP_WIDTH/2;
+    curView.cursorY = DISP_HEIGHT/2;
 
-  // initial map position is the middle of Edmonton
-  curView.mapX = ((MAPWIDTH / DISP_WIDTH)/2) * DISP_WIDTH;
-  curView.mapY = ((MAPHEIGHT / DISP_HEIGHT)/2) * DISP_HEIGHT;
+	  // initial map position is the middle of Edmonton
+	  curView.mapX = ((MAPWIDTH / DISP_WIDTH)/2) * DISP_WIDTH;
+	  curView.mapY = ((MAPHEIGHT / DISP_HEIGHT)/2) * DISP_HEIGHT;
 
-	// This ensures the first getRestaurant() will load the block as all blocks
-	// will start at REST_START_BLOCK, which is 4000000.
-	cache.cachedBlock = 0;
+		// This ensures the first getRestaurant() will load the block as all blocks
+		// will start at REST_START_BLOCK, which is 4000000.
+		cache.cachedBlock = 0;
 
-	// will draw the initial map screen and other stuff on the display
-  beginMode0();
+		// will draw the initial map screen and other stuff on the display
+	  beginMode0();
 }
 
-// Draw the map patch of edmonton over the preView position, then
-// draw the red cursor at the curView position.
+/* 
+	Draw the map patch of edmonton over the preView position, then
+	draw the red cursor at the curView position. Taken from provided part 1 solution
+
+	Arguments:
+		None
+
+	Returns:
+		None
+*/
 void moveCursor() {
 	lcd_image_draw(&edmontonBig, &tft,
 								 preView.mapX + preView.cursorX - CURSOR_SIZE/2,
@@ -162,7 +179,14 @@ void moveCursor() {
 							 CURSOR_SIZE, CURSOR_SIZE, TFT_RED);
 }
 
-// Set the mode to 0 and draw the map and cursor according to curView
+/*
+	Set the mode to 0 and draw the map and cursor according to curView. Taken from given part 1 solution.
+
+	Arguments:
+		None
+	Returns: 
+		None
+*/
 void beginMode0() {
 	// Black out the rating selector part (less relevant in Assignment 1, but
 	// it is useful when you first start the program).
@@ -182,8 +206,16 @@ void beginMode0() {
   displayMode = MAP;
 }
 
-// Print the i'th restaurant in the sorted list.
-// Assumes 0 <= i < 21 for part 1.
+/* 
+	Print the i'th restaurant in the sorted list. Modified from existing part 1 solution to 
+	account for i > 21. 
+
+	Arguments:
+		i (int): index of restaurant in sorted list
+
+	Returns:
+		None
+*/
 void printRestaurant(int i) {
 	restaurant r;
 
@@ -201,8 +233,16 @@ void printRestaurant(int i) {
 	tft.print(r.name);
 }
 
-// Begin mode 1 by sorting the restaurants around the cursor
-// and then displaying the list.
+/*
+	Begin mode 1 by sorting the restaurants around the cursor
+	and then displaying the list. Modified from existing part 1 solution.
+
+	Arguments:
+		None
+
+	Returns:
+		None
+*/
 void beginMode1() {
 	tft.setCursor(0, 0);
 	tft.fillScreen(TFT_BLACK);
@@ -225,7 +265,15 @@ void beginMode1() {
 	displayMode = 1;
 }
 
-// Checks if the edge was nudged and scrolls the map if it was.
+/*
+	Checks if the edge was nudged and scrolls the map if it was. Taken from part 1 solution.
+
+	Arguments:
+		None
+
+	Returns: 
+		None
+*/
 void checkRedrawMap() {
   // A flag to indicate if we scrolled.
 	bool scroll = false;
@@ -264,7 +312,15 @@ void checkRedrawMap() {
 	}
 }
 
-// Process joystick and touchscreen input when in mode 0.
+/*
+	Process joystick and touchscreen input when in mode 0. Taken from part1 solution.
+
+	Arguments:
+		None
+
+	Returns:
+		None
+*/
 void scrollingMap() {
   int v = analogRead(JOY_VERT_ANALOG);
   int h = analogRead(JOY_HORIZ_ANALOG);
@@ -363,7 +419,15 @@ void scrollingMap() {
 	}
 }
 
-// Process joystick movement when in mode 1.
+/*
+	Process joystick movement when in mode 1. Modified from part 1 solution to include overallIndex.
+	
+	Arguments:
+		None
+
+	Returns:
+		None
+*/
 void scrollingMenu() {
 	int oldRest = selectedRest;
 	int overallIndexPrev = overallIndex;
@@ -441,7 +505,15 @@ void scrollingMenu() {
 	}
 }
 
+/*
+	Draws buttons on right side of screen which control rating and sort type. 
 
+	Arguments:
+		None
+
+	Returns:
+		None
+*/
 void buttons() {
 	// draw top button
 	tft.drawRect(DISP_WIDTH, 0, RATING_SIZE, DISP_HEIGHT/2, TFT_WHITE);

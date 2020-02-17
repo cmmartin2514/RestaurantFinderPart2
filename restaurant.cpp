@@ -4,7 +4,16 @@
 	Sets *ptr to the i'th restaurant. If this restaurant is already in the cache,
 	it just copies it directly from the cache to *ptr. Otherwise, it fetches
 	the block containing the i'th restaurant and stores it in the cache before
-	setting *ptr to it.
+	setting *ptr to it. Taken from part1 solution.
+
+	Arguments: 
+		ptr (restaurant*): pointer to restaurant struct
+		i (int): index of restaurant that needs to be puilled
+		card (Sd2Card*): pointer to SD card
+		cache (RestCache*): pointer to cache of restaurant structs pulled from block
+
+	Returns:
+		None
 */
 void getRestaurant(restaurant* ptr, int i, Sd2Card* card, RestCache* cache) {
 	// calculate the block with the i'th restaurant
@@ -22,14 +31,32 @@ void getRestaurant(restaurant* ptr, int i, Sd2Card* card, RestCache* cache) {
 	*ptr = cache->block[i%8];
 }
 
-// Swaps the two restaurants (which is why they are pass by reference).
+/*
+	Swaps the two restaurants (which is why they are pass by reference). Taken from part1 solution.
+
+	Arguments:
+		r1 (RestDist&): pass-by-reference to first restaurant struct
+		r2 (RestDist&): pass-by-reference to second restaurant struct
+
+	Returns:
+		None
+*/
 void swap(RestDist& r1, RestDist& r2) {
 	RestDist tmp = r1;
 	r1 = r2;
 	r2 = tmp;
 }
 
-// Insertion sort to sort the restaurants.
+/*
+	Insertion sort to sort the restaurants.
+
+	Arguments:	
+		restaurants[] (RestDist): Array of RestDist structs
+		n (int): number of items to sort
+
+	Returns:
+		None
+*/
 void insertionSort(RestDist restaurants[], int n) {
 	// n is number to sort
 	// Invariant: at the start of iteration i, the
@@ -43,7 +70,17 @@ void insertionSort(RestDist restaurants[], int n) {
 	}
 }
 
-// pivot function used in quickSort
+/*
+	Pivot function used in quickSort
+
+	Arguments:
+		restaurants[] (RestDist): Array of RestDist structs to be sorted
+		start (int): index to start at
+		end (int): index to end at
+
+	Returns:
+		i+1, which is the index of the pivot after the list has been sorted.
+*/
 int pivot(RestDist restaurants[], int start, int end) {
 	int pi = restaurants[end].dist;
 	int i = (start - 1);
@@ -59,7 +96,17 @@ int pivot(RestDist restaurants[], int start, int end) {
 	return i+1;
 }
 
-// quickSort function
+/*
+	quickSort function
+
+	Arguments:
+		restaurants[] (RestDist): array of RestDist structures
+		start (int): index to start at
+		end (int): index to end at
+
+	Returns:
+		None
+*/
 void quickSort(RestDist restaurants[], int start, int end) {
 	if (start < end) {
 		int pi = pivot(restaurants, start, end);
@@ -68,11 +115,35 @@ void quickSort(RestDist restaurants[], int start, int end) {
 	}
 }
 
-// Computes the manhattan distance between two points (x1, y1) and (x2, y2).
+/*
+	Computes the manhattan distance between two points (x1, y1) and (x2, y2).
+
+	Argumnets:
+		x1 (int16_t): x coordinate of first point
+		x2 (int16_t): x coordinate of second point
+		y1 (int16_t): y coordinate of first point
+		y2 (int16_t): y coordinate of second point
+
+	Returns:
+		Manhattan distance betweeen the two points
+*/
 int16_t manhattan(int16_t x1, int16_t y1, int16_t x2, int16_t y2) {
 	return abs(x1-x2) + abs(y1-y2);
 }
 
+/* 
+	Generates list of restaurants based on rating
+
+	Arguments:
+		rateSelect (int): desired minimum rating of restaurant
+		mv (const MapView&): pass-by-reference to current map view
+		restaurants[] (RestDist): array of RestDist structures
+		card (Sd2Card*): pointer to SD card
+		cache (RestCache*): pointer to cache of restaurant structs
+
+	Returns:
+		Number of restaurants that fit minimum rating
+*/
 int generateList(int rateSelect, const MapView& mv, RestDist restaurants[], Sd2Card* card, RestCache* cache) {
 	restaurant r;
 	int j = 0;
@@ -94,8 +165,20 @@ int generateList(int rateSelect, const MapView& mv, RestDist restaurants[], Sd2C
 	Fetches all restaurants from the card, saves their RestDist information
 	in restaurants[], and then sorts them based on their distance to the
 	point on the map represented by the MapView.
+
+	Arguments: 
+		mv (const MapView&): pass-by-reference to current map view
+		restaurants[] (RestDist): array of RestDist structs
+		card (Sd2Card*): pointer to SD card
+		cache (RestCache*): pointer to cache of restaurant structs
+		rateSelect (int): minimum rating of restaurant desired
+		sortSelect (int): type of sort desired
+
+	Returns:
+		Number of relevant restaurants based on desired rating.
 */
-int getAndSortRestaurants(const MapView& mv, RestDist restaurants[], Sd2Card* card, RestCache* cache, int rateSelect, int sortSelect) {
+int getAndSortRestaurants(const MapView& mv, RestDist restaurants[], Sd2Card* card, RestCache* cache, 
+						  int rateSelect, int sortSelect) {
 	int relevant;
 	// First get all the restaurants and store their corresponding RestDist information.
 	if (sortSelect == 0 || sortSelect == 1) {
