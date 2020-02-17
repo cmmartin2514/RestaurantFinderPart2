@@ -71,8 +71,10 @@ int selectedRest;
 int overallIndex;
 
 // rating and sort selector variables
-int rating = 3;
-int sortMode = 2;
+int rating = 1;
+int sortMode = 0;
+
+int relevantRestaurants = NUM_RESTAURANTS;
 
 // which mode are we in?
 enum DisplayMode { MAP, MENU } displayMode;
@@ -207,7 +209,7 @@ void beginMode1() {
 	tft.setTextSize(2);
 
 	// Get the RestDist information for this cursor position and sort it.
-	getAndSortRestaurants(curView, restaurants, &card, &cache);
+	relevantRestaurants = getAndSortRestaurants(curView, restaurants, &card, &cache, rating, sortMode);
 
 	// Initially have the closest restaurant highlighted.
 	selectedRest = 0;
@@ -331,8 +333,8 @@ void scrollingMap() {
         if (ptx > RATING_SIZE) {
         	// touch was in map range
         	restaurant r;
-			// just iterate through all restaurants on the card
-			for (int i = 0; i < NUM_RESTAURANTS; ++i) {
+			// just iterate through all relevant restaurants (preferred rating) on the card
+			for (int i = 0; i < relevantRestaurants; ++i) {
 				getRestaurant(&r, i, &card, &cache);
 				int16_t rest_x_tft = lon_to_x(r.lon)-curView.mapX, rest_y_tft = lat_to_y(r.lat)-curView.mapY;
 
@@ -381,7 +383,7 @@ void scrollingMenu() {
 	}
 
 	// if the selected restaurant has exceeded number of displayed restaurants on screen
-	if (selectedRest > REST_DISP_NUM - 1 && overallIndex < 1066) {
+	if (selectedRest > REST_DISP_NUM - 1 && overallIndex < relevantRestaurants) {
 		// reset the screen
 		tft.fillScreen(TFT_BLACK);
 		// reset the selected rest to 0
@@ -401,7 +403,7 @@ void scrollingMenu() {
 		}
 	} else {
 		// constrain the overallIndex variable to number of restaurants
-		overallIndex = constrain(overallIndex, 0, NUM_RESTAURANTS);
+		overallIndex = constrain(overallIndex, 0, relevantRestaurants);
 
 		// constrain the selected restaurant varaible to number of displayable restaurants
 		selectedRest = constrain(selectedRest, 0, REST_DISP_NUM);
@@ -460,13 +462,13 @@ void buttons() {
 	}
 
 	// label bottom button according to sort mode
-	if (sortMode == 0) {
+	if (sortMode == 1) {
 		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2) - 5, 3*(DISP_HEIGHT/4) - 40, 'I', TFT_WHITE, TFT_BLACK, 2);
 		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2) - 5, 3*(DISP_HEIGHT/4) - 24, 'S', TFT_WHITE, TFT_BLACK, 2);
 		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2) - 5, 3*(DISP_HEIGHT/4) - 8, 'O', TFT_WHITE, TFT_BLACK, 2);
 		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2) - 5, 3*(DISP_HEIGHT/4) + 8, 'R', TFT_WHITE, TFT_BLACK, 2);
 		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2) - 5, 3*(DISP_HEIGHT/4) + 24, 'T', TFT_WHITE, TFT_BLACK, 2);
-	} else if (sortMode == 1) {
+	} else if (sortMode == 0) {
 		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2) - 5, 3*(DISP_HEIGHT/4) - 40, 'Q', TFT_WHITE, TFT_BLACK, 2);
 		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2) - 5, 3*(DISP_HEIGHT/4) - 24, 'S', TFT_WHITE, TFT_BLACK, 2);
 		tft.drawChar(DISP_WIDTH + (RATING_SIZE/2) - 5, 3*(DISP_HEIGHT/4) - 8, 'O', TFT_WHITE, TFT_BLACK, 2);

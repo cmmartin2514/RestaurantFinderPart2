@@ -30,10 +30,11 @@ void swap(RestDist& r1, RestDist& r2) {
 }
 
 // Insertion sort to sort the restaurants.
-void insertionSort(RestDist restaurants[]) {
+void insertionSort(RestDist restaurants[], int n) {
+	// n is number to sort
 	// Invariant: at the start of iteration i, the
 	// array restaurants[0 .. i-1] is sorted.
-	for (int i = 1; i < NUM_RESTAURANTS; ++i) {
+	for (int i = 1; i < n; ++i) {
 		// Swap restaurant[i] back through the sorted list restaurants[0 .. i-1]
 		// until it finds its place.
 		for (int j = i; j > 0 && restaurants[j].dist < restaurants[j-1].dist; --j) {
@@ -72,22 +73,61 @@ int16_t manhattan(int16_t x1, int16_t y1, int16_t x2, int16_t y2) {
 	return abs(x1-x2) + abs(y1-y2);
 }
 
+int generateList(int rateSelect, const MapView& mv, RestDist restaurants[], Sd2Card* card, RestCache* cache) {
+	restaurant r;
+	int j = 0;
+	for (int i = 0; i < NUM_RESTAURANTS; i++) {
+		getRestaurant(&r, i, card, cache);
+		int newRating = max((r.rating + 1)/2, 1);
+		if (newRating >= rateSelect) {
+			restaurants[j].index = i;
+			restaurants[j].dist = manhattan(lat_to_y(r.lat), lon_to_x(r.lon),
+								mv.mapY + mv.cursorY, mv.mapX + mv.cursorX);
+			j++;
+		}
+	}
+
+	return j;
+}
+
 /*
 	Fetches all restaurants from the card, saves their RestDist information
 	in restaurants[], and then sorts them based on their distance to the
 	point on the map represented by the MapView.
 */
-void getAndSortRestaurants(const MapView& mv, RestDist restaurants[], Sd2Card* card, RestCache* cache) {
-	restaurant r;
-
+int getAndSortRestaurants(const MapView& mv, RestDist restaurants[], Sd2Card* card, RestCache* cache, int rateSelect, int sortSelect) {
+	int relevant;
 	// First get all the restaurants and store their corresponding RestDist information.
-	for (int i = 0; i < NUM_RESTAURANTS; ++i) {
-		getRestaurant(&r, i, card, cache);
-		restaurants[i].index = i;
-		restaurants[i].dist = manhattan(lat_to_y(r.lat), lon_to_x(r.lon),
-								mv.mapY + mv.cursorY, mv.mapX + mv.cursorX);
+	if (sortSelect == 0 || sortSelect == 1) {
+		relevant = generateList(rateSelect, mv, restaurants, card, cache);
+		if (sortSelect == 0) {
+			uint32_t time1 = millis();
+			quickSort(restaurants, 0, relevant);
+			uint32_t time2 = millis();
+			Serial.print("Qsort Time: ");
+			Serial.println(time2 - time1);
+		} else {
+			uint32_t time1 = millis();
+			insertionSort(restaurants, relevant);
+			uint32_t time2 = millis();
+			Serial.print("Isort Time: ");
+			Serial.println(time2 - time1);
+		}
+	} else if (sortSelect == 2) {
+		// both
+		relevant = generateList(rateSelect, mv, restaurants, card, cache);
+		uint32_t time1 = millis();
+		insertionSort(restaurants, relevant);
+		uint32_t time2 = millis();
+		Serial.print("Isort Time: ");
+		Serial.println(time2 - time1);
+		relevant = generateList(rateSelect, mv, restaurants, card, cache);
+		time1 = millis();
+		quickSort(restaurants, 0, relevant);
+		time2 = millis();
+		Serial.print("Qsort Time: ");
+		Serial.println(time2 - time1);
 	}
 
-	// Now sort them.
-	insertionSort(restaurants);
+	return relevant;
 }
